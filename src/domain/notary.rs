@@ -23,6 +23,14 @@ pub struct NotarizationSessionRequest {
     pub max_transcript_size: Option<usize>,
 }
 
+/// Request object of the /session API
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotarizationNotarizeRequest {
+    /// Maximum transcript size in bytes
+    pub session_id: Option<String>,
+}
+
 /// Types of client that the prover is using
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ClientType {

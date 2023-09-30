@@ -4,7 +4,7 @@ pub mod websocket;
 
 use async_trait::async_trait;
 use axum::{
-    extract::{rejection::JsonRejection, FromRequestParts, State},
+    extract::{rejection::JsonRejection, FromRequestParts, State, Query},
     http::{header, request::Parts, HeaderMap, StatusCode},
     response::{IntoResponse, Json, Response},
 };
@@ -17,7 +17,7 @@ use tracing::{debug, error, info, trace};
 use uuid::Uuid;
 
 use crate::{
-    domain::notary::{NotarizationSessionRequest, NotarizationSessionResponse, NotaryGlobals},
+    domain::notary::{NotarizationSessionRequest, NotarizationSessionResponse, NotaryGlobals, NotarizationNotarizeRequest},
     error::NotaryServerError,
     service::{
         axum_websocket::{header_eq, WebSocketUpgrade},
@@ -68,6 +68,7 @@ pub async fn upgrade_protocol(
     protocol_upgrade: ProtocolUpgrade,
     mut headers: HeaderMap,
     State(notary_globals): State<NotaryGlobals>,
+    Query(params): Query<NotarizationNotarizeRequest>,
 ) -> Response {
     info!("Received upgrade protocol request");
     // Extract the session_id from the headers
@@ -81,9 +82,13 @@ pub async fn upgrade_protocol(
             }
         },
         None => {
-            let err_msg = "Missing X-Session-Id in upgrade protocol request".to_string();
-            error!(err_msg);
-            return NotaryServerError::BadProverRequest(err_msg).into_response();
+            if let Some(param_session_id) = params.session_id {
+                param_session_id
+            } else {
+                let err_msg = "Missing X-Session-Id and session_id parameter in upgrade protocol request".to_string();
+                error!(err_msg);
+                return NotaryServerError::BadProverRequest(err_msg).into_response();
+            }
         }
     };
     // Fetch the configuration data from the store using the session_id
