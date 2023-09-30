@@ -1,9 +1,10 @@
 use axum::{
-    http::{Request, StatusCode},
+    http::{Request, StatusCode, Method},
     response::IntoResponse,
     routing::{get, post},
     Router,
 };
+use tower_http::cors::{Any, CorsLayer};
 use eyre::{ensure, eyre, Result};
 use futures_util::future::poll_fn;
 use hyper::server::{
@@ -79,6 +80,8 @@ pub async fn run_server(config: &NotaryServerProperties) -> Result<(), NotarySer
         )
         .route("/session", post(initialize))
         .route("/notarize", get(upgrade_protocol))
+        // FIXME: use permissive for testing , but should be changed to a more restrictive policy
+        .layer(CorsLayer::permissive())
         .with_state(notary_globals);
     let mut app = router.into_make_service();
 
